@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Converter</title>
+    <style>
+        body {
+            margin: 0;
+            background: #1351CE;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #EFE76E;
+        }
+
+        .converter-container {
+            background: rgba(32, 62, 73, 0);
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            width: 85%;
+            max-width: 450px;
+        }
+
+        .input-wrapper,
+        .conversion-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .weight-input,
+        .unit-selector {
+            padding: 10px;
+            width: 70%;
+            background: #ffffff;
+            border: 2px solid #203E49;
+            font-size: 18px;
+            border-radius: 10px;
+            color: #1351CE;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .weight-input:focus,
+        .unit-selector:focus {
+            border-color: none;
+            background: white;
+            color: gray;
+        }
+
+        .error-message {
+            color: #D41818;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .converter-heading {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .history {
+            margin-top: 20px;
+        }
+
+        .history h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        #history-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        #history-list li {
+            background: white;
+            color: #1351CE;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="converter-container">
+        <h1 class="converter-heading">Weight Converter</h1>
+        
+        <div class="input-wrapper">
+            <label for="weight-input">Enter weight:</label>
+            <input type="number" id="weight-input" class="weight-input" step="0.1" placeholder="Enter weight" />
+        </div>
+        
+        <div class="conversion-wrapper">
+            <label for="unit-selector">Convert from:</label>
+            <select id="unit-selector" class="unit-selector">
+                <option value="pounds-to-kg">Pounds to Kilograms</option>
+                <option value="kg-to-pounds">Kilograms to Pounds</option>
+                <option value="ounces-to-grams">Ounces to Grams</option>
+                <option value="grams-to-ounces">Grams to Ounces</option>
+                <option value="stones-to-kg">Stones to Kilograms</option>
+                <option value="kg-to-stones">Kilograms to Stones</option>
+            </select>
+        </div>
+        
+        <p>Your converted weight is: <span id="conversion-result" aria-live="polite"></span></p>
+        <p class="error-message" id="error-message" aria-live="assertive"></p>
+        
+        <div class="history">
+            <h3>Conversion History (Click enter)</h3>
+            <ul id="history-list"></ul>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+        const inputEl = document.getElementById("weight-input");
+        const unitSelector = document.getElementById("unit-selector");
+        const errorEl = document.getElementById("error-message");
+        const resultEl = document.getElementById("conversion-result");
+        const historyList = document.getElementById("history-list");
+
+        const conversionRates = {
+            "pounds-to-kg": (value) => (value / 2.2).toFixed(2),
+            "kg-to-pounds": (value) => (value * 2.2).toFixed(2),
+            "ounces-to-grams": (value) => (value * 28.35).toFixed(2),
+            "grams-to-ounces": (value) => (value / 28.35).toFixed(2),
+            "stones-to-kg": (value) => (value * 6.35).toFixed(2),
+            "kg-to-stones": (value) => (value / 6.35).toFixed(2),
+        };
+
+        function validateInput(value) {
+            if (value <= 0 || isNaN(value)) {
+                return "Please enter a valid positive number!";
+            }
+            return null;
+        }
+
+        function updateResults() {
+            const value = parseFloat(inputEl.value.trim());
+            const selectedConversion = unitSelector.value;
+            const error = validateInput(value);
+
+            if (error) {
+                errorEl.textContent = error;
+                resultEl.textContent = "";
+                return;
+            }
+
+            errorEl.textContent = "";
+            const convertedValue = conversionRates[selectedConversion](value);
+            const conversionText = `${value} ${getUnitLabel(selectedConversion, "from")} = ${convertedValue} ${getUnitLabel(selectedConversion, "to")}`;
+            
+            resultEl.textContent = convertedValue;
+
+            addToHistory(conversionText);
+        }
+
+        function addToHistory(conversionText) {
+            const listItem = document.createElement("li");
+            listItem.textContent = conversionText;
+            historyList.appendChild(listItem);
+
+            if (historyList.childNodes.length > 10) {
+                historyList.removeChild(historyList.firstChild);
+            }
+        }
+
+        function getUnitLabel(conversion, type) {
+            const units = {
+                "pounds-to-kg": { from: "pounds", to: "kilograms" },
+                "kg-to-pounds": { from: "kilograms", to: "pounds" },
+                "ounces-to-grams": { from: "ounces", to: "grams" },
+                "grams-to-ounces": { from: "grams", to: "ounces" },
+                "stones-to-kg": { from: "stones", to: "kilograms" },
+                "kg-to-stones": { from: "kilograms", to: "stones" },
+            };
+            return units[conversion][type];
+        }
+
+        inputEl.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                updateResults();
+            }
+        });
+
+        unitSelector.addEventListener("change", () => {
+            resultEl.textContent = ""; 
+            errorEl.textContent = ""; 
+        });
+    });
+
+
+    </script>
+</body>
+</html>
